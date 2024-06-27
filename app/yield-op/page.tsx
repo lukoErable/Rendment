@@ -2,7 +2,7 @@
 
 import Image from 'next/image';
 import { useEffect, useState } from 'react';
-import { Protocol } from '../db/api/queries/route';
+import { Protocol } from '../api/queries/route';
 
 export default function YieldOP() {
   const [protocols, setProtocols] = useState<Protocol[]>([]);
@@ -10,7 +10,7 @@ export default function YieldOP() {
   useEffect(() => {
     const fetchProtocols = async () => {
       try {
-        const response = await fetch('db/api/queries');
+        const response = await fetch('/api/queries');
         if (!response.ok) {
           throw new Error('Erreur lors de la récupération des protocoles');
         }

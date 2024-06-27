@@ -4,7 +4,7 @@ import { Chart, registerables } from 'chart.js';
 import 'chartjs-adapter-date-fns';
 import { useEffect, useState } from 'react';
 import { Line } from 'react-chartjs-2';
-import { Protocol } from '../db/api/queries/route';
+import { Protocol } from '../api/queries/route';
 
 Chart.register(...registerables);
 
@@ -26,7 +26,7 @@ export default function YieldOP() {
   useEffect(() => {
     const fetchProtocols = async () => {
       try {
-        const response = await fetch('db/api/query_yield');
+        const response = await fetch('/api/query_yield');
         if (!response.ok) {
           throw new Error('Erreur lors de la récupération des protocoles');
         }
