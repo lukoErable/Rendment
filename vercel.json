@@ -1,8 +1,12 @@
 {
   "crons": [
     {
+      "path": "/api/cron/aio",
+      "schedule": "0 18 * * *"
+    },
+    {
       "path": "/api/cron/webhook",
-      "schedule": "0 1 * * *"
+      "schedule": "1 18 * * *"
     }
   ]
 }
