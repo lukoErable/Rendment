@@ -101,7 +101,7 @@ async function generateAndSendEmbed() {
 }
 
 export default async function handler(req, res) {
-  // Vérification de sécurité
+  console.log('Webhook handler called');
   if (req.headers.authorization !== `Bearer ${process.env.CRON_SECRET}`) {
     return res.status(401).json({ message: 'Unauthorized' });
   }
