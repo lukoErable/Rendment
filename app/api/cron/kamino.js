@@ -76,10 +76,9 @@ async function getMarketData(Url, start, end, cryptoName) {
 }
 
 export default async function handler(req, res) {
-  // Optional: Add authentication
-  // if (req.query.token !== process.env.CRON_SECRET_TOKEN) {
-  //   return res.status(401).json({ message: 'Unauthorized' });
-  // }
+  if (req.query.token !== process.env.CRON_SECRET_TOKEN) {
+    return res.status(401).json({ message: 'Unauthorized' });
+  }
 
   const end = new Date().toISOString().split('T')[0];
   const startDate = new Date();

@@ -1,0 +1,32 @@
+{
+  "crons": [
+    {
+      "path": "/api/cron/kamino",
+      "schedule": "0 18 * * *"
+    },
+    {
+      "path": "/api/cron/lulo",
+      "schedule": "0 18 * * *"
+    },
+    {
+      "path": "/api/cron/mango",
+      "schedule": "0 18 * * *"
+    },
+    {
+      "path": "/api/cron/meteora",
+      "schedule": "0 18 * * *"
+    },
+    {
+      "path": "/api/cron/raydium",
+      "schedule": "0 18 * * *"
+    },
+    {
+      "path": "/api/cron/sanctum",
+      "schedule": "0 18 * * *"
+    },
+    {
+      "path": "/api/cron/webhook",
+      "schedule": "0 1 * * *"
+    }
+  ]
+}
