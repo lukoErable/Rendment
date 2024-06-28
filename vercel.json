@@ -2,11 +2,11 @@
   "crons": [
     {
       "path": "/api/cron/aio",
-      "schedule": "0 18 * * *"
+      "schedule": "59 17 * * *"
     },
     {
       "path": "/api/cron/webhook",
-      "schedule": "1 18 * * *"
+      "schedule": "0 18 * * *"
     }
   ]
 }
