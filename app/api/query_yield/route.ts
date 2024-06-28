@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { getConnection } from '../db/route';
+import { getConnection } from '../../lib/db';
 
 export interface Protocol {
   blockchain: string;

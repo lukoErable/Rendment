@@ -1,6 +1,6 @@
 'use server';
 
-import { getConnection } from '../db/route';
+import { getConnection } from '../../lib/db';
 
 async function fetchData() {
   try {
