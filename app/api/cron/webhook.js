@@ -1,5 +1,6 @@
-import axios from 'axios';
-import mysql from 'mysql2/promise';
+const axios = require('axios');
+const { color } = require('chart.js/helpers');
+const mysql = require('mysql2/promise');
 
 const pool = mysql.createPool({
   host: process.env.DB_HOST,
@@ -33,31 +34,33 @@ const query = `
   ) ranked
   WHERE rn = 1
   ORDER BY YIELD DESC;
+
 `;
 
-async function getDataFromDatabase() {
-  const connection = await pool.getConnection();
+const getDataFromDatabase = async () => {
+  let connection;
   try {
+    connection = await pool.getConnection();
     const [rows] = await connection.execute(query);
     return rows;
   } catch (error) {
     console.error('Error fetching data from database:', error);
     throw error;
   } finally {
-    connection.release();
+    if (connection) connection.release();
   }
-}
+};
 
-async function sendToDiscord(embed) {
-  const webhookUrl = process.env.DISCORD_WEBHOOK_URL;
+const sendToDiscord = async (embed) => {
+  const webhookUrl =
+    'https://discord.com/api/webhooks/1245730724535861248/bX623OsB1DltZXcpaHc2LjG9a8fmgtaoZNl-nSC8KR_wx_ZlAuduNYRsExA5rpHCkQze';
   try {
     await axios.post(webhookUrl, { embeds: [embed] });
     console.log('Message sent to Discord successfully.');
   } catch (error) {
     console.error('Error sending message to Discord:', error);
-    throw error;
   }
-}
+};
 
 function getDateValue() {
   const franceTime = new Date().toLocaleDateString('fr-FR', {
@@ -71,53 +74,37 @@ function getDateValue() {
   return `${year}-${month}-${day}`;
 }
 
-async function generateAndSendEmbed() {
-  const data = await getDataFromDatabase();
-  const dateValue = getDateValue();
-
-  if (data.length === 0) {
-    console.log('No data available for today.');
-    return { message: 'No data available for today.' };
-  }
-
-  const fields = data.map((row) => ({
-    name: `${row.ASSET}\n${row.PROTOCOL}`,
-    value: `APY: ${row.YIELD}%`,
-    inline: true,
-  }));
-
-  const embed = {
-    title: 'Max Yields of the day',
-    color: Math.floor(Math.random() * 16777215),
-    description: `${dateValue}`,
-    fields: fields,
-    thumbnail: {
-      url: 'https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExcXJpOGhudmYzZnFhOWFlMTZiMWJzZHRnczB2ZG1vMm43OThiMGp0diZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/VRKheDy4DkBMrQm66p/giphy.gif',
-    },
-  };
-
-  await sendToDiscord(embed);
-  return { message: 'Discord message sent successfully.' };
-}
-
-export default async function handler(req, res) {
-  console.log('Webhook handler called');
-  if (req.headers.authorization !== `Bearer ${process.env.CRON_SECRET}`) {
-    return res.status(401).json({ message: 'Unauthorized' });
-  }
-
-  if (req.method === 'GET') {
-    try {
-      const result = await generateAndSendEmbed();
-      res.status(200).json(result);
-    } catch (error) {
-      console.error('An error occurred:', error);
-      res
-        .status(500)
-        .json({ message: 'Internal server error', error: error.toString() });
+const main = async () => {
+  try {
+    const data = await getDataFromDatabase();
+    const dateValue = getDateValue();
+    if (data.length === 0) {
+      console.log('No data available for today.');
+      return;
     }
-  } else {
-    res.setHeader('Allow', ['GET']);
-    res.status(405).end(`Method ${req.method} Not Allowed`);
+
+    const fields = data.map((row) => ({
+      name: `${row.ASSET}\n${row.PROTOCOL}`,
+      description: `APY: ${row.YIELD} %             `,
+      value: `APY: ${row.YIELD}%`,
+      inline: true,
+    }));
+
+    const embed = {
+      title: 'Max Yields of the day',
+      color: Math.floor(Math.random() * 16777215),
+      description: `${dateValue}`,
+      fields: fields,
+      thumbnail: {
+        url: 'https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExcXJpOGhudmYzZnFhOWFlMTZiMWJzZHRnczB2ZG1vMm43OThiMGp0diZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/VRKheDy4DkBMrQm66p/giphy.gif',
+      },
+    };
+
+    await sendToDiscord(embed);
+  } catch (error) {
+    console.error('An error occurred:', error);
   }
-}
+};
+
+// Exécuter le script
+main();
