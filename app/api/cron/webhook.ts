@@ -1,7 +1,32 @@
-const axios = require('axios');
-const { color } = require('chart.js/helpers');
-const mysql = require('mysql2/promise');
+import axios from 'axios';
+import dotenv from 'dotenv';
+import mysql from 'mysql2/promise';
 
+// Charger les variables d'environnement
+dotenv.config();
+
+// Types
+interface DatabaseRow {
+  PROTOCOL: string;
+  ASSET: string;
+  YIELD: number;
+}
+
+interface DiscordEmbed {
+  title: string;
+  color: number;
+  description: string;
+  fields: {
+    name: string;
+    value: string;
+    inline: boolean;
+  }[];
+  thumbnail: {
+    url: string;
+  };
+}
+
+// Configuration de la base de données
 const pool = mysql.createPool({
   host: process.env.DB_HOST,
   user: process.env.DB_USER,
@@ -34,15 +59,15 @@ const query = `
   ) ranked
   WHERE rn = 1
   ORDER BY YIELD DESC;
-
 `;
 
-const getDataFromDatabase = async () => {
+// Fonction pour récupérer les données de la base de données
+const getDataFromDatabase = async (): Promise<DatabaseRow[]> => {
   let connection;
   try {
     connection = await pool.getConnection();
     const [rows] = await connection.execute(query);
-    return rows;
+    return rows as DatabaseRow[];
   } catch (error) {
     console.error('Error fetching data from database:', error);
     throw error;
@@ -51,30 +76,37 @@ const getDataFromDatabase = async () => {
   }
 };
 
-const sendToDiscord = async (embed) => {
-  const webhookUrl =
-    'https://discord.com/api/webhooks/1245730724535861248/bX623OsB1DltZXcpaHc2LjG9a8fmgtaoZNl-nSC8KR_wx_ZlAuduNYRsExA5rpHCkQze';
+// Fonction pour envoyer un message à Discord
+const sendToDiscord = async (embed: DiscordEmbed): Promise<void> => {
+  const webhookUrl = process.env.DISCORD_WEBHOOK_URL;
+  if (!webhookUrl) {
+    throw new Error('Discord webhook URL is not defined');
+  }
   try {
     await axios.post(webhookUrl, { embeds: [embed] });
     console.log('Message sent to Discord successfully.');
   } catch (error) {
     console.error('Error sending message to Discord:', error);
+    throw error;
   }
 };
 
-function getDateValue() {
-  const franceTime = new Date().toLocaleDateString('fr-FR', {
-    timeZone: 'Europe/Paris',
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-  });
-
-  const [day, month, year] = franceTime.split('/');
-  return `${year}-${month}-${day}`;
+// Fonction pour obtenir la date actuelle au format YYYY-MM-DD
+function getDateValue(): string {
+  return new Date()
+    .toLocaleString('fr-FR', {
+      timeZone: 'Europe/Paris',
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+    })
+    .split('/')
+    .reverse()
+    .join('-');
 }
 
-const main = async () => {
+// Fonction principale
+const main = async (): Promise<void> => {
   try {
     const data = await getDataFromDatabase();
     const dateValue = getDateValue();
@@ -85,15 +117,14 @@ const main = async () => {
 
     const fields = data.map((row) => ({
       name: `${row.ASSET}\n${row.PROTOCOL}`,
-      description: `APY: ${row.YIELD} %             `,
-      value: `APY: ${row.YIELD}%`,
+      value: `APY: ${row.YIELD.toFixed(2)}%`,
       inline: true,
     }));
 
-    const embed = {
+    const embed: DiscordEmbed = {
       title: 'Max Yields of the day',
       color: Math.floor(Math.random() * 16777215),
-      description: `${dateValue}`,
+      description: dateValue,
       fields: fields,
       thumbnail: {
         url: 'https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExcXJpOGhudmYzZnFhOWFlMTZiMWJzZHRnczB2ZG1vMm43OThiMGp0diZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/VRKheDy4DkBMrQm66p/giphy.gif',
@@ -103,8 +134,18 @@ const main = async () => {
     await sendToDiscord(embed);
   } catch (error) {
     console.error('An error occurred:', error);
+    process.exit(1);
+  } finally {
+    await pool.end();
   }
 };
 
 // Exécuter le script
-main();
+if (require.main === module) {
+  main().catch((error) => {
+    console.error('Unhandled error:', error);
+    process.exit(1);
+  });
+}
+
+export { main };
